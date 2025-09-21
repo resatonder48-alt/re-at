@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Goku Uzay Oyunu - Mobil Destekli</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: black;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    #hud {
+      width: 400px;
+      margin: 10px auto;
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      color: white;
+    }
+
+    #score, #lives {
+      padding: 5px 10px;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px black;
+    }
+
+    #gameArea {
+      width: 400px;
+      height: 600px;
+      margin: 0 auto;
+      border: 2px solid white;
+      position: relative;
+      background-image: url('space.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: white;
+    }
+
+    #player {
+      width: 50px;
+      height: 50px;
+      background-image: url('goku.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      position: absolute;
+      bottom: 10px;
+      left: 175px;
+    }
+
+    .bullet {
+      width: 20px;
+      height: 20px;
+      position: absolute;
+      background-image: url('top.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+
+    .enemy {
+      width: 40px;
+      height: 40px;
+      background-image: url('airplane1.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      position: absolute;
+      top: 0;
+    }
+
+    #killMessage {
+      position: absolute;
+      top: 250px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-size: 22px;
+      font-weight: 600;
+      text-shadow: 2px 2px 4px black;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+
+    /* Mobil kontrol butonlarý */
+    #mobileControls {
+      width: 400px;
+      margin: 10px auto;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .controlBtn {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 18px;
+      padding: 10px 20px;
+      border: 2px solid white;
+      border-radius: 5px;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .controlBtn:active {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="score">Skor: 0</div>
+  <div id="lives">Can: 5</div>
+</div>
+
+<div id="gameArea">
+  <div id="player"></div>
+  <div id="killMessage"></div>
+</div>
+
+<!-- Mobil Kontroller -->
+<div id="mobileControls">
+  <div class="controlBtn" onclick="moveLeft()">‹</div>
+  <div class="controlBtn" onclick="shoot()">ATEÞ</div>
+  <div class="controlBtn" onclick="moveRight()">›</div>
+</div>
+
+<script>
+  const gameArea = document.getElementById("gameArea");
+  const player = document.getElementById("player");
+  const scoreDisplay = document.getElementById("score");
+  const livesDisplay = document.getElementById("lives");
+  const killMessage = document.getElementById("killMessage");
+
+  let bullets = [];
+  let enemies = [];
+  let score = 0;
+  let lives = 5;
+  let playerX = 175;
+  player.style.left = playerX + "px";
+
+  const killTexts = ["pirka fýrat", "pirka ahmet", "pirka mýsto"];
+  let killTextIndex = 0;
+
+  // Klavye kontrolleri
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") moveLeft();
+    else if (e.key === "ArrowRight") moveRight();
+    else if (e.key === " ") shoot();
+  });
+
+  // Mobil buton fonksiyonlarý
+  function moveLeft() {
+    if (playerX > 0) {
+      playerX -= 20;
+      player.style.left = playerX + "px";
+    }
+  }
+
+  function moveRight() {
+    if (playerX < 350) {
+      playerX += 20;
+      player.style.left = playerX + "px";
+    }
+  }
+
+  function shoot() {
+    const bullet = document.createElement("div");
+    bullet.classList.add("bullet");
+    bullet.style.left = (playerX + 15) + "px";
+    bullet.style.bottom = "60px";
+    gameArea.appendChild(bullet);
+    bullets.push(bullet);
+  }
+
+  function createEnemy() {
+    const enemy = document.createElement("div");
+    enemy.classList.add("enemy");
+    const x = Math.floor(Math.random() * (400 - 40));
+    enemy.style.left = x + "px";
+    enemy.style.top = "0px";
+    gameArea.appendChild(enemy);
+    enemies.push(enemy);
+  }
+
+  function updateHUD() {
+    scoreDisplay.textContent = "Skor: " + score;
+    livesDisplay.textContent = "Can: " + lives;
+  }
+
+  function showKillMessage() {
+    killMessage.textContent = killTexts[killTextIndex];
+    killMessage.style.opacity = 1;
+
+    killTextIndex++;
+    if (killTextIndex >= killTexts.length) killTextIndex = 0;
+
+    setTimeout(() => {
+      killMessage.style.opacity = 0;
+    }, 2000);
+  }
+
+  function gameLoop() {
+    bullets.forEach((bullet, bIndex) => {
+      let bottom = parseInt(bullet.style.bottom);
+      if (bottom > 600) {
+        bullet.remove();
+        bullets.splice(bIndex, 1);
+      } else {
+        bullet.style.bottom = (bottom + 10) + "px";
+      }
+    });
+
+    enemies.forEach((enemy, eIndex) => {
+      let top = parseInt(enemy.style.top) || 0;
+      if (top > 600) {
+        enemy.remove();
+        enemies.splice(eIndex, 1);
+        lives--;
+        updateHUD();
+        if (lives <= 0) {
+          alert("Oyun Bitti! Skorun: " + score);
+          location.reload();
+        }
+      } else {
+        enemy.style.top = (top + 3) + "px";
+      }
+
+      bullets.forEach((bullet, bIndex) => {
+        const bulletRect = bullet.getBoundingClientRect();
+        const enemyRect = enemy.getBoundingClientRect();
+
+        if (
+          bulletRect.left < enemyRect.right &&
+          bulletRect.right > enemyRect.left &&
+          bulletRect.top < enemyRect.bottom &&
+          bulletRect.bottom > enemyRect.top
+        ) {
+          bullet.remove();
+          enemy.remove();
+          bullets.splice(bIndex, 1);
+          enemies.splice(eIndex, 1);
+          score += 10;
+          updateHUD();
+          showKillMessage();
+        }
+      });
+    });
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  setInterval(createEnemy, 1500);
+  requestAnimationFrame(gameLoop);
+  updateHUD();
+</script>
+
+</body>
+</html>
